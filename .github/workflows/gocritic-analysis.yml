@@ -1,0 +1,82 @@
+name: GoCritic Analysis for External Repos
+
+# 使用 workflow_dispatch 来手动触发工作流
+on:
+  workflow_dispatch:
+
+jobs:
+  analyze-vitess:
+    runs-on: ubuntu-latest
+    name: Analyze Vitess
+    steps:
+      - name: Checkout your repository
+        uses: actions/checkout@v3
+
+      - name: Clone Vitess repository
+        run: git clone https://github.com/vitessio/vitess.git
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'  # 根据 Vitess 的 Go 版本设置
+
+      - name: Install GoCritic
+        run: go install github.com/go-critic/go-critic/cmd/gocritic@latest
+
+      - name: Run GoCritic analysis on Vitess
+        run: |
+          cd vitess
+          gocritic check ./... > ../gocritic-vitess-report.txt
+
+      - name: Display GoCritic report for Vitess
+        run: cat gocritic-vitess-report.txt
+
+  analyze-fiber:
+    runs-on: ubuntu-latest
+    name: Analyze Fiber
+    steps:
+      - name: Checkout your repository
+        uses: actions/checkout@v3
+
+      - name: Clone Fiber repository
+        run: git clone https://github.com/gofiber/fiber.git
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'  # 根据 Fiber 的要求设置
+
+      - name: Install GoCritic
+        run: go install github.com/go-critic/go-critic/cmd/gocritic@latest
+
+      - name: Run GoCritic analysis on Fiber
+        run: |
+          cd fiber
+          gocritic check ./... > ../gocritic-fiber-report.txt
+
+      - name: Display GoCritic report for Fiber
+        run: cat gocritic-fiber-report.txt
+
+  post-results:
+    runs-on: ubuntu-latest
+    name: Post GoCritic Results to Issue
+    needs: [analyze-vitess, analyze-fiber]
+    steps:
+      - name: Checkout your repository
+        uses: actions/checkout@v3
+
+      - name: Post results to GitHub Issue
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: 1  # 这里是目标 issue 的编号
+          body: |
+            **GoCritic Analysis Report for Vitess:**
+            ```txt
+            $(cat gocritic-vitess-report.txt)
+            ```
+
+            **GoCritic Analysis Report for Fiber:**
+            ```txt
+            $(cat gocritic-fiber-report.txt)
+            ```
