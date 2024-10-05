@@ -4,6 +4,9 @@ name: GoCritic Analysis for External Repos
 on:
   workflow_dispatch:
 
+permissions:
+  issues: write
+
 jobs:
   analyze-vitess:
     runs-on: ubuntu-latest
